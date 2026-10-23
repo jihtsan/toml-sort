@@ -18,6 +18,33 @@ from toml_sort.tomlsort import SortOverrideConfiguration
 PATH_EXAMPLES = "tests/examples"
 
 
+@pytest.mark.parametrize("newline", [b"\n", b"\r\n"])
+def test_check_preserves_newlines(tmp_path: Path, newline: bytes) -> None:
+    path = tmp_path / "formatted.toml"
+    original = newline.join([b"a = 1", b"b = 2", b""])
+    path.write_bytes(original)
+    result = capture(["toml-sort", "--check", str(path)])
+    assert result.returncode == 0
+    assert path.read_bytes() == original
+
+
+@pytest.mark.parametrize("newline", [b"\n", b"\r\n"])
+@pytest.mark.parametrize("in_place", [True, False])
+def test_file_output_preserves_newlines(
+    tmp_path: Path, newline: bytes, in_place: bool
+) -> None:
+    source = tmp_path / "input.toml"
+    target = source if in_place else tmp_path / "output.toml"
+    original = newline.join([b"b = 2", b"a = 1", b""])
+    source.write_bytes(original)
+    args = ["--in-place"] if in_place else ["--output", str(target)]
+    result = capture(["toml-sort", "--all", *args, str(source)])
+    assert result.returncode == 0
+    assert target.read_bytes() == newline.join([b"a = 1", b"b = 2", b""])
+    if not in_place:
+        assert source.read_bytes() == original
+
+
 class SubprocessReturn(NamedTuple):
     """Organize the return results when of running a cli subprocess."""
 

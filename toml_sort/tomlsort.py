@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import fnmatch
+import re
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional
 
@@ -287,4 +288,6 @@ class TomlSort:
                 ),
             )
         )
-        return tomlrt.dumps(document).strip() + "\n"
+        first_newline = re.search(r"\r?\n", self.input_toml)
+        newline = first_newline.group() if first_newline else "\n"
+        return tomlrt.dumps(document).strip() + newline

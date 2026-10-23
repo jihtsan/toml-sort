@@ -22,6 +22,16 @@ def test_sort_toml_is_str() -> None:
     assert isinstance(sorted_result, str)
 
 
+@pytest.mark.parametrize("newline", ["\n", "\r\n"])
+def test_sort_preserves_newlines(newline: str) -> None:
+    original = newline.join(["b = 2", "a = 1", ""])
+    expected = newline.join(["a = 1", "b = 2", ""])
+    assert (
+        TomlSort(original, sort_config=SortConfiguration(table_keys=True)).sorted()
+        == expected
+    )
+
+
 @pytest.mark.parametrize(
     "unsorted_fixture,sorted_fixture,args",
     [

@@ -39,7 +39,7 @@ def read_file(path: str) -> str:
     """Read contents from a file."""
     if path == STD_STREAM:
         return sys.stdin.read()
-    with open(path, "r", encoding=ENCODING) as fileobj:
+    with open(path, "r", encoding=ENCODING, newline="") as fileobj:
         return fileobj.read()
 
 
@@ -48,7 +48,7 @@ def write_file(path: str, content: str) -> None:
     if path == STD_STREAM:
         print(content, end="")
         return
-    with open(path, "w", encoding=ENCODING) as fileobj:
+    with open(path, "w", encoding=ENCODING, newline="") as fileobj:
         fileobj.write(content)
 
 
