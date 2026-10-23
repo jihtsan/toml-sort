@@ -46,7 +46,11 @@ def read_file(path: str) -> str:
 def write_file(path: str, content: str) -> None:
     """Write content to a path."""
     if path == STD_STREAM:
-        print(content, end="")
+        if hasattr(sys.stdout, "buffer"):
+            sys.stdout.flush()
+            sys.stdout.buffer.write(content.encode(ENCODING))
+        else:
+            sys.stdout.write(content)
         return
     with open(path, "w", encoding=ENCODING, newline="") as fileobj:
         fileobj.write(content)

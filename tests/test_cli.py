@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+from io import BytesIO, TextIOWrapper
 from pathlib import Path
 from typing import Callable, List, NamedTuple, Optional
 from unittest import mock
@@ -16,6 +17,18 @@ from toml_sort.cli import parse_sort_first
 from toml_sort.tomlsort import SortOverrideConfiguration
 
 PATH_EXAMPLES = "tests/examples"
+
+
+def test_stdout_does_not_translate_existing_crlf(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    buffer = BytesIO()
+    stream = TextIOWrapper(buffer, encoding="UTF-8", newline="\r\n")
+    with monkeypatch.context() as patcher:
+        patcher.setattr("sys.stdout", stream)
+        cli.write_file("-", "a = 1\r\n")
+        stream.flush()
+    assert buffer.getvalue() == b"a = 1\r\n"
 
 
 @pytest.mark.parametrize("newline", [b"\n", b"\r\n"])
