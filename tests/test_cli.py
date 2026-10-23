@@ -65,6 +65,19 @@ def test_invalid_configuration_reports_filename(
     assert result.stdout == ""
 
 
+def test_invalid_configuration_encoding_reports_filename(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    Path("pyproject.toml").write_bytes(b'key = "\xff"\n')
+    result = capture(["toml-sort"], stdin="key = 1\n")
+
+    assert result.returncode == 1
+    assert "pyproject.toml:" in result.stderr
+    assert "Traceback" not in result.stderr
+    assert result.stdout == ""
+
+
 class SubprocessReturn(NamedTuple):
     """Organize the return results when of running a cli subprocess."""
 

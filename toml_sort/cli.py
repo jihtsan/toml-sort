@@ -71,6 +71,9 @@ def load_pyproject() -> Table:
             content = file.read()
     except OSError:
         return Table.inline()
+    except UnicodeError as error:
+        printerr(f"pyproject.toml: {error}")
+        sys.exit(1)
 
     try:
         document = tomlrt.loads(content)
