@@ -22,6 +22,19 @@ def test_sort_toml_is_str() -> None:
     assert isinstance(sorted_result, str)
 
 
+def test_preserve_comment_text_formatting() -> None:
+    original = "# init_command = [\n#     'python',\n# ]\n\nb=2 #  inline\n#    block\na=1\n#  footer  \n"
+    formatter = FormattingConfiguration(normalize_comments=False)
+    result = TomlSort(original, format_config=formatter).sorted()
+    assert "#     'python'," in result
+    assert "#  inline" in result
+    assert "#    block" in result
+    assert "#  footer  \n" in result
+    assert "b = 2" in result
+    assert TomlSort(result, format_config=formatter).sorted() == result
+    assert "#     'python'," not in TomlSort(original).sorted()
+
+
 @pytest.mark.parametrize(
     "unsorted_fixture,sorted_fixture,args",
     [

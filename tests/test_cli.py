@@ -18,6 +18,33 @@ from toml_sort.tomlsort import SortOverrideConfiguration
 PATH_EXAMPLES = "tests/examples"
 
 
+@pytest.mark.parametrize("use_config", [False, True])
+def test_preserve_comment_format_option(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, use_config: bool
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    original = "# command = [\n#     'python',\n# ]\nb=2\na=1\n"
+    if use_config:
+        Path("pyproject.toml").write_text(
+            "[tool.tomlsort]\nno_comment_format = true\n", encoding="UTF-8"
+        )
+    args = [] if use_config else ["--no-comment-format"]
+    result = capture(["toml-sort", "--all", *args], stdin=original)
+    assert result.returncode == 0
+    assert result.stderr == ""
+    assert "#     'python'," in result.stdout
+    assert result.stdout.index("a = 1") < result.stdout.index("b = 2")
+
+
+def test_remove_comments_with_preserved_formatting() -> None:
+    result = capture(
+        ["toml-sort", "--no-comments", "--no-comment-format"],
+        stdin="#    comment\nkey=1 #  inline\n",
+    )
+    assert result.returncode == 0
+    assert result.stdout == "key = 1\n"
+
+
 class SubprocessReturn(NamedTuple):
     """Organize the return results when of running a cli subprocess."""
 

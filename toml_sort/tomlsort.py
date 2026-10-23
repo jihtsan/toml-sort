@@ -53,6 +53,7 @@ class FormattingConfiguration:
     spaces_before_inline_comment: int = 2
     spaces_indent_inline_array: int = 2
     trailing_comma_inline_array: bool = False
+    normalize_comments: bool = True
 
 
 @dataclass
@@ -280,6 +281,7 @@ class TomlSort:
         self._sort_container(document, ())
         document.format(
             options=tomlrt.FormatOptions(
+                normalize_comments=self.format_config.normalize_comments,
                 indent=self.format_config.spaces_indent_inline_array,
                 eol_comment_spaces=self.format_config.spaces_before_inline_comment,
                 multiline_trailing_comma=(
@@ -287,4 +289,10 @@ class TomlSort:
                 ),
             )
         )
-        return tomlrt.dumps(document).strip() + "\n"
+        output = tomlrt.dumps(document)
+        output = (
+            output.strip()
+            if self.format_config.normalize_comments
+            else output.strip("\r\n")
+        )
+        return output + "\n"
