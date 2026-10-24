@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List
 
 import pytest
+import tomlrt
 
 from toml_sort import TomlSort
 from toml_sort.tomlsort import (
@@ -30,6 +31,17 @@ def test_sort_preserves_newlines(newline: str) -> None:
         TomlSort(original, sort_config=SortConfiguration(table_keys=True)).sorted()
         == expected
     )
+
+
+def test_sort_document_preserves_input_and_string_api() -> None:
+    original = 'b = "café"\r\na = 1\r\n'
+    document = tomlrt.loads(original)
+    sorter = TomlSort(document, sort_config=SortConfiguration(table_keys=True))
+    result = sorter.sorted_document()
+    assert isinstance(result, tomlrt.Document)
+    assert tomlrt.dumps(document) == original
+    assert tomlrt.dumps(result) == 'a = 1\r\nb = "café"\r\n'
+    assert sorter.sorted() == tomlrt.dumps(result)
 
 
 @pytest.mark.parametrize(

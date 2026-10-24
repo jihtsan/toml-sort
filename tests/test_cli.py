@@ -11,6 +11,7 @@ from typing import Callable, List, NamedTuple, Optional
 from unittest import mock
 
 import pytest
+import tomlrt
 
 from toml_sort import cli
 from toml_sort.cli import parse_sort_first
@@ -26,9 +27,19 @@ def test_stdout_does_not_translate_existing_crlf(
     stream = TextIOWrapper(buffer, encoding="UTF-8", newline="\r\n")
     with monkeypatch.context() as patcher:
         patcher.setattr("sys.stdout", stream)
-        cli.write_file("-", "a = 1\r\n")
+        cli.write_file("-", tomlrt.loads("a = 1\r\n"))
         stream.flush()
     assert buffer.getvalue() == b"a = 1\r\n"
+
+
+@pytest.mark.parametrize("newline", [b"\n", b"\r\n"])
+def test_binary_standard_streams_preserve_newlines(newline: bytes) -> None:
+    original = newline.join([b"b = 2", b"a = 1", b""])
+    result = subprocess.run(
+        ["toml-sort", "--all"], input=original, capture_output=True, check=False
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == newline.join([b"a = 1", b"b = 2", b""])
 
 
 @pytest.mark.parametrize("newline", [b"\n", b"\r\n"])
@@ -316,7 +327,7 @@ def test_load_config_file_read():
 )
 def test_load_config_file(toml, expected):
     """Test load_config_file."""
-    open_mock = mock.mock_open(read_data=toml)
+    open_mock = mock.mock_open(read_data=toml.encode("UTF-8"))
     with mock.patch("toml_sort.cli.open", open_mock):
         section = cli.load_pyproject()
         assert cli.parse_config(section) == expected
@@ -327,7 +338,7 @@ def test_load_config_file(toml, expected):
 )
 def test_load_config_file_invalid(toml):
     """Test error if pyproject.toml is not valid."""
-    open_mock = mock.mock_open(read_data=toml)
+    open_mock = mock.mock_open(read_data=toml.encode("UTF-8"))
     with mock.patch("toml_sort.cli.open", open_mock):
         with pytest.raises(SystemExit):
             section = cli.load_pyproject()
@@ -385,7 +396,7 @@ def test_load_config_file_invalid(toml):
 )
 def test_load_config_overrides(toml, expected):
     """Turn settings tomldocument into SortOverrideConfiguration."""
-    open_mock = mock.mock_open(read_data=toml)
+    open_mock = mock.mock_open(read_data=toml.encode("UTF-8"))
     with mock.patch("toml_sort.cli.open", open_mock):
         section = cli.load_pyproject()
         assert isinstance(section, dict)
@@ -417,7 +428,7 @@ def test_load_config_overrides(toml, expected):
 )
 def test_load_config_overrides_fail(toml):
     """parse_config_overrides exits if config contains unexpected key."""
-    open_mock = mock.mock_open(read_data=toml)
+    open_mock = mock.mock_open(read_data=toml.encode("UTF-8"))
     with mock.patch("toml_sort.cli.open", open_mock):
         with pytest.raises(SystemExit):
             section = cli.load_pyproject()
